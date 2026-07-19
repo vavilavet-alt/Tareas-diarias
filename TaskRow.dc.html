@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<div draggable="{{ true }}" onDragStart="{{ handleDragStart }}" onDragOver="{{ handleDragOver }}" onDrop="{{ handleDrop }}" style="{{ rowStyle }}">
+  <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1">
+    <span style="color:#c9cdd6;font-size:13px;cursor:grab;user-select:none">⋮⋮</span>
+    <div onClick="{{ handleToggle }}" style="{{ checkStyle }}">
+      <sc-if value="{{ task.completed }}" hint-placeholder-val="{{ false }}">
+        <span style="color:#fff;font-size:11px;font-weight:800">✓</span>
+      </sc-if>
+    </div>
+    <div onClick="{{ handleOpen }}" style="min-width:0;flex:1;cursor:pointer;display:flex;align-items:center;gap:10px">
+      <span style="{{ titleStyle }}">{{ task.title }}</span>
+      <sc-if value="{{ hasProject }}" hint-placeholder-val="{{ false }}">
+        <span style="{{ projectChipStyle }}">{{ projectName }}</span>
+      </sc-if>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+    <sc-if value="{{ hasDate }}" hint-placeholder-val="{{ false }}">
+      <span style="{{ dateBadgeStyle }}">{{ dateLabel }}</span>
+    </sc-if>
+    <sc-if value="{{ hasRecurrence }}" hint-placeholder-val="{{ false }}">
+      <span title="Recurrente" style="color:#9aa1ad;font-size:12px">↻</span>
+    </sc-if>
+    <sc-if value="{{ hasAssignee }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ avatarStyle }}">{{ assigneeInitials }}</div>
+    </sc-if>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:600,&quot;height&quot;:56},&quot;task&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;projects&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;array&quot;},&quot;members&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;array&quot;},&quot;onToggle&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;function&quot;},&quot;onOpen&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;function&quot;},&quot;onDragStart&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;function&quot;},&quot;onDrop&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;function&quot;},&quot;overdue&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+
+function fmtShort(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+}
+
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props;
+    const task = p.task || {};
+    const project = (p.projects || []).find(pr => pr.id === task.projectId);
+    const member = (p.members || []).find(m => m.id === task.assigneeId);
+    const overdue = !!p.overdue && !task.completed;
+
+    return {
+      task,
+      rowStyle: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '10px 12px', border: '1px solid #eef0f3', borderRadius: '10px', background: overdue ? '#fef7f7' : '#fff', opacity: task.completed ? 0.55 : 1 },
+      checkStyle: { width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: `2px solid ${task.completed ? '#2563eb' : '#d1d5db'}`, background: task.completed ? '#2563eb' : 'transparent' },
+      titleStyle: { fontSize: '14px', color: '#111318', textDecoration: task.completed ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+      hasProject: !!project,
+      projectName: project ? project.name : '',
+      projectChipStyle: { fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '100px', flexShrink: 0, color: '#fff', background: project ? project.color : '#9aa1ad' },
+      hasRecurrence: !!task.recurrence,
+      hasDate: !!task.dueDate,
+      dateLabel: task.dueDate ? fmtShort(task.dueDate) : '',
+      dateBadgeStyle: { fontSize: '11px', fontWeight: 600, color: overdue ? '#dc2626' : '#8a8f99' },
+      hasAssignee: !!member,
+      assigneeInitials: member ? member.initials : '',
+      avatarStyle: { width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '10px', fontWeight: 700, background: member ? member.color : '#9aa1ad' },
+      handleToggle: (e) => { e.stopPropagation(); p.onToggle && p.onToggle(task.id); },
+      handleOpen: () => p.onOpen && p.onOpen(task.id),
+      handleDragStart: () => p.onDragStart && p.onDragStart(task.id),
+      handleDragOver: (e) => e.preventDefault(),
+      handleDrop: (e) => { e.preventDefault(); p.onDrop && p.onDrop(task.id); },
+    };
+  }
+}
+
+</script>
+</body>
+</html>
